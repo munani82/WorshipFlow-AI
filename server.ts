@@ -12,7 +12,7 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // 100% Accurate Scraper Logic (Server-side bypasses CORS)
+  // Exact Scraper Logic (Server-side bypasses CORS & AI Inference)
   app.get("/api/charts/weekly", async (req, res) => {
     try {
       const targetUrl = "https://music.bugs.co.kr/genre/chart/etc/nccm/total/week";
@@ -25,7 +25,7 @@ async function startServer() {
       const $ = cheerio.load(html);
       const songs: any[] = [];
 
-      // Exact DOM traversal based on Bugs Music structure
+      // Targetting exact table rows in Bugs CCM Chart
       $("table.list.trackList tbody tr").each((index, element) => {
         if (index >= 10) return false; // Top 10 only
 
@@ -38,12 +38,7 @@ async function startServer() {
         else if (rankInfo.find(".arrow.down").length > 0) delta = "down";
 
         if (title && artist) {
-          songs.push({
-            title,
-            artist,
-            count: index + 1,
-            delta
-          });
+          songs.push({ title, artist, count: index + 1, delta });
         }
       });
 
@@ -53,11 +48,11 @@ async function startServer() {
       });
     } catch (error) {
       console.error("Scraping Error:", error);
-      res.status(500).json({ error: "Failed to fetch chart data from Bugs" });
+      res.status(500).json({ error: "Bugs 서버로부터 데이터를 가져오는 데 실패했습니다." });
     }
   });
 
-  // Vite middleware for development
+  // Vite integration
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },

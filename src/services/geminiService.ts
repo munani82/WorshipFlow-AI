@@ -56,7 +56,7 @@ export const worshipDirectorService = {
 
   async getWeeklyTrends(): Promise<WeeklyAnalysis> {
     try {
-      // Call our dedicated server-side Scraper API
+      // Calling our dedicated full-stack API (server-side scraping)
       const response = await fetch("/api/charts/weekly");
       if (!response.ok) throw new Error("서버로부터 데이터를 가져오지 못했습니다.");
       return await response.json();
