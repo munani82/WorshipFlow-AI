@@ -48,10 +48,10 @@ export const worshipDirectorService = {
     try {
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Search for the "Melon Weekly CCM Chart" for the most recent week in April 2026. 
-        Focus on identifying the Top 10 songs. 
+        contents: `Search for the "Melon Weekly CCM Chart" for the most recent week (April 2026). 
+        You MUST return the Top 10 songs. 
         The 'count' field MUST be the rank (1 for 1st place, up to 10). 
-        Format your response as a strict JSON according to the schema.`,
+        Format your response as a strict JSON object.`,
         config: {
           tools: [{ googleSearch: {} }],
           responseMimeType: "application/json",
@@ -79,15 +79,11 @@ export const worshipDirectorService = {
       });
 
       const text = response.text;
-      try {
-        return JSON.parse(text);
-      } catch (e) {
-        console.error("JSON Parse Error in getWeeklyTrends. Raw response:", text);
-        throw e;
-      }
+      return JSON.parse(text);
     } catch (error) {
-      console.error("API Error in getWeeklyTrends:", error);
-      throw error;
+      console.error("Melon Chart Error:", error);
+      // Return a minimal fallback to avoid complete breakage
+      return { date: "2026-04-20", top_trending_songs: [] };
     }
   },
 
@@ -97,11 +93,11 @@ export const worshipDirectorService = {
         model: "gemini-3-flash-preview",
         contents: `Recommend a professional worship setlist based on the theme: "${userTheme}".
         STRUCTURE:
-        - 1 Slow/Intimate song (잔잔한 곡)
-        - 2 Fast songs (빠른 곡)
-        - 1 or 2 Build-up songs (빌드업 곡)
+        1. [Slow/Intimate] - 1 song
+        2. [Fast] - 2 songs (MUST be in the SAME KEY as each other for seamless transition)
+        3. [Build-up] - 2 songs (MUST be in the SAME KEY as each other for seamless transition)
         
-        CRITICAL CONSTRAINT: All songs in the setlist MUST be in the SAME KEY (e.g., all G key, all A key, etc.) to allow for continuous flow.
+        Total 5 songs. 
         Select popular songs from major Korean worship teams (Markers, Anointing, Welove, J-US, etc.).
         Mention why each song is chosen for this theme.`,
         config: {
@@ -132,14 +128,9 @@ export const worshipDirectorService = {
       });
 
       const text = response.text;
-      try {
-        return JSON.parse(text);
-      } catch (e) {
-        console.error("JSON Parse Error in getRecommendation. Raw response:", text);
-        throw e;
-      }
+      return JSON.parse(text);
     } catch (error) {
-      console.error("API Error in getRecommendation:", error);
+      console.error("Recommendation Error:", error);
       throw error;
     }
   },
