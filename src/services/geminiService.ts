@@ -8,7 +8,8 @@ export const worshipDirectorService = {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: `Search for and analyze the worship songs from this YouTube video: ${youtubeUrl}.
-      Focus on major Korean worship teams (Markers, Anointing, Onnuri, J-US, etc.). 
+      Focus on major Korean worship teams (Markers, Anointing, Welove, J-US, etc.). 
+      FOR EACH SONG: You MUST search and verify the official Key and Tempo (BPM) from Chosic.com for accurate musical data.
       Exclude global songs that are not translated or widely sung in South Korean churches.
       Extract the songs, their Keys, Tempos, and Themes.`,
       config: {
@@ -45,7 +46,7 @@ export const worshipDirectorService = {
   async getWeeklyTrends(): Promise<WeeklyAnalysis> {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: "Search for and analyze recent (this week) worship trends in South Korean churches. Focus on major teams like Markers Worship, Anointing, Welove, J-US. Return the top trending songs from their latest releases or most-watched videos this week. The 'count' should be the actual or estimated view counts from YouTube data found.",
+      contents: "Search for and analyze recent (this week) worship trends in South Korean churches. Focus on major teams like Markers Worship, Anointing, Welove, J-US. For trending songs, prioritize music databases like Chosic.com to verify Key and BPM. Return the top trending songs from their latest releases or most-watched videos this week.",
       config: {
         tools: [{ googleSearch: {} }],
         thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
@@ -81,9 +82,11 @@ export const worshipDirectorService = {
       model: "gemini-3-flash-preview",
       contents: `Recommend a professional worship setlist based on the theme: "${userTheme}".
       Include 4-5 songs that are widely sung in major South Korean churches. 
+      CRITICAL: Cross-reference Chosic.com for every recommended song to provide precise Key and BPM information.
       Ensure a flow from energetic (Fast) to intimate (Slow).
       Mention why each song is chosen for this theme.`,
       config: {
+        tools: [{ googleSearch: {} }],
         thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
         responseMimeType: "application/json",
         responseSchema: {
