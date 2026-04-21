@@ -55,15 +55,71 @@ export const worshipDirectorService = {
   },
 
   async getWeeklyTrends(): Promise<WeeklyAnalysis> {
+    // 1. Try the local Scraper API first (This works in the AI Studio Preview/Cloud Run environment)
     try {
       const response = await fetch("/api/charts/weekly");
-      if (!response.ok) {
-        throw new Error("서버에서 정보를 가져올 수 없습니다.");
+      if (response.ok) {
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          return await response.json();
+        }
       }
-      return await response.json();
+    } catch (e) {
+      console.warn("Local Scraper API is not available (common in static hosting like Netlify). Falling back to Cloud Scraper.");
+    }
+
+    // 2. Fallback: Use Gemini as a "Scraper" (This works on Netlify because it's a client-side SDK call)
+    const key = getApiKey();
+    if (!key) {
+      throw new Error("API 키가 설정되지 않았습니다. Netlify 설정에서 VITE_GEMINI_API_KEY를 확인해 주세요.");
+    }
+
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: `Visit the Bugs Music CCM Weekly Chart: https://music.bugs.co.kr/genre/chart/etc/nccm/total/week
+        
+        STRICT EXTRACTION TASK:
+        - Identify the EXACT Top 10 rankings as listed on the page.
+        - Rank 3 to 10 MUST be verbatim from the site.
+        - Do not summarize, do not hallucinate. 
+        - If a song is not on the list, do not include it.
+        
+        Return the Title, Artist, and Rank (count). 
+        Format: JSON only.`,
+        config: {
+          tools: [{ googleSearch: {} }],
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              date: { type: Type.STRING },
+              top_trending_songs: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    title: { type: Type.STRING },
+                    artist: { type: Type.STRING },
+                    count: { type: Type.NUMBER },
+                    delta: { type: Type.STRING, enum: ["up", "down", "stable"] },
+                  },
+                  required: ["title", "artist", "count"],
+                },
+              },
+            },
+            required: ["date", "top_trending_songs"],
+          },
+        },
+      });
+
+      const text = response.text;
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const jsonString = jsonMatch ? jsonMatch[0] : text;
+      return JSON.parse(jsonString);
     } catch (error: any) {
-      console.error("Bugs API Error:", error);
-      throw new Error(`주간 차트 로딩 실패: ${error.message || '서버 연결을 확인해 주세요.'}`);
+      console.error("Cloud Scrapper Error:", error);
+      throw new Error(`차트 데이터를 불러올 수 없습니다. (환경: Netlify)`);
     }
   },
 
