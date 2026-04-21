@@ -1,10 +1,21 @@
+/// <reference types="vite/client" />
 import { GoogleGenAI, Type, ThinkingLevel } from "@google/genai";
 import { WeeklyAnalysis, Recommendation, VideoAnalysisResult } from "../types";
 
-const apiKey = (process.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY) as string;
-const ai = new GoogleGenAI({ apiKey });
+// Improved API Key handling - Vite standard for client-side environment variables
+const getApiKey = () => {
+  // @ts-ignore
+  const key = import.meta.env?.VITE_GEMINI_API_KEY || (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : '');
+  if (!key) {
+    console.warn("GEMINI_API_KEY is not defined. Please set VITE_GEMINI_API_KEY in your Netlify environment variables.");
+  }
+  return key as string;
+};
+
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 export const worshipDirectorService = {
+  // previous methods... (analyzeVideo is unchanged)
   async analyzeVideo(youtubeUrl: string): Promise<VideoAnalysisResult> {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
@@ -15,7 +26,6 @@ export const worshipDirectorService = {
       Extract the songs, their Keys, Tempos, and Themes.`,
       config: {
         tools: [{ googleSearch: {} }],
-        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -46,50 +56,14 @@ export const worshipDirectorService = {
 
   async getWeeklyTrends(): Promise<WeeklyAnalysis> {
     try {
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Search for the "Melon Weekly CCM Chart" for the most recent week (April 2026). 
-        You MUST return the Top 10 songs. 
-        The 'count' field MUST be the rank (1 for 1st place, up to 10). 
-        Format your response as a strict JSON object.`,
-        config: {
-          tools: [{ googleSearch: {} }],
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              date: { type: Type.STRING },
-              top_trending_songs: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    title: { type: Type.STRING },
-                    artist: { type: Type.STRING },
-                    count: { type: Type.NUMBER },
-                    delta: { type: Type.STRING, enum: ["up", "down", "stable"] },
-                  },
-                  required: ["title", "artist", "count"],
-                },
-              },
-            },
-            required: ["date", "top_trending_songs"],
-          },
-        },
-      });
-
-      const text = response.text;
-      try {
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        const jsonString = jsonMatch ? jsonMatch[0] : text;
-        return JSON.parse(jsonString);
-      } catch (e) {
-        console.error("JSON Parse Error in getWeeklyTrends. Raw response:", text);
-        throw new Error("데이터를 해석하는 중 오류가 발생했습니다.");
+      const response = await fetch("/api/charts/weekly");
+      if (!response.ok) {
+        throw new Error("서버에서 정보를 가져올 수 없습니다.");
       }
+      return await response.json();
     } catch (error: any) {
-      console.error("Melon Chart Error:", error);
-      throw error;
+      console.error("Bugs API Error:", error);
+      throw new Error(`주간 차트 로딩 실패: ${error.message || '서버 연결을 확인해 주세요.'}`);
     }
   },
 

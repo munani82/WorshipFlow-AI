@@ -126,13 +126,13 @@ export default function App() {
             >
               <div className="flex items-center justify-between border-b border-worship-border pb-4">
                 <div className="flex items-center gap-2">
-                  <h2 className="font-serif text-xl text-worship-accent">Melon CCM Top Trends</h2>
+                  <h2 className="font-serif text-xl text-worship-accent">Bugs CCM Top Trends</h2>
                   <span className="text-[10px] bg-worship-accent/10 text-worship-accent px-2 py-0.5 rounded-full border border-worship-accent/20">실시간 연동</span>
                 </div>
                 <TrendingUp className="w-4 h-4 text-worship-secondary" />
               </div>
               <p className="text-[10px] text-worship-secondary leading-relaxed font-serif italic mb-4">
-                * 멜론 CCM 최신/인기 차트를 실시간으로 분석한 데이터입니다. 예배 선곡 트렌드를 한눈에 확인하세요.
+                * 벅스 뮤직 CCM 주간 차트를 실시간으로 분석한 데이터입니다. 예배 선곡 트렌드를 한눈에 확인하세요.
               </p>
               
               <div className="space-y-1 divide-y divide-worship-border">
