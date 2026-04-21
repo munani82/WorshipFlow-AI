@@ -31,6 +31,7 @@ export default function App() {
   const [recommendationTheme, setRecommendationTheme] = useState('');
   const [generatingSetlist, setGeneratingSetlist] = useState(false);
   const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTrends();
@@ -39,10 +40,12 @@ export default function App() {
   const fetchTrends = async () => {
     try {
       setLoadingTrends(true);
+      setError(null);
       const data = await worshipDirectorService.getWeeklyTrends();
       setTrends(data);
-    } catch (error) {
-      console.error('Failed to fetch trends:', error);
+    } catch (err: any) {
+      console.error('Failed to fetch trends:', err);
+      setError('데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoadingTrends(false);
     }
