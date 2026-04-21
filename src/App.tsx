@@ -122,9 +122,15 @@ export default function App() {
               className="bg-worship-card border border-worship-border rounded-xl p-8 space-y-6"
             >
               <div className="flex items-center justify-between border-b border-worship-border pb-4">
-                <h2 className="font-serif text-xl text-worship-accent">Weekly Trending</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="font-serif text-xl text-worship-accent">Weekly Trending</h2>
+                  <span className="text-[10px] bg-worship-accent/10 text-worship-accent px-2 py-0.5 rounded-full border border-worship-accent/20">AI Insights</span>
+                </div>
                 <TrendingUp className="w-4 h-4 text-worship-secondary" />
               </div>
+              <p className="text-[10px] text-worship-secondary leading-relaxed font-serif italic mb-4">
+                * 주요 찬양팀의 공식 채널 및 커뮤니티 활동을 AI가 실시간 검색하여 분석한 트렌드입니다. 횟수는 영향력 지표를 의미합니다.
+              </p>
               
               <div className="space-y-1 divide-y divide-worship-border">
                 {loadingTrends ? (

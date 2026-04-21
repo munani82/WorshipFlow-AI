@@ -45,8 +45,9 @@ export const worshipDirectorService = {
   async getWeeklyTrends(): Promise<WeeklyAnalysis> {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: "Analyze recent (this week) worship trends specifically for major South Korean churches (Markers, Anointing, etc.). Return the top trending songs widely sung in Korea this week.",
+      contents: "Search for and analyze recent (this week) worship trends in South Korean churches. Focus on major teams like Markers Worship, Anointing, Welove, J-US. Return the top trending songs from their latest releases or most-watched videos this week. The 'count' should be the actual or estimated view counts from YouTube data found.",
       config: {
+        tools: [{ googleSearch: {} }],
         thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
         responseMimeType: "application/json",
         responseSchema: {
