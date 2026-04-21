@@ -46,7 +46,11 @@ export const worshipDirectorService = {
   async getWeeklyTrends(): Promise<WeeklyAnalysis> {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: "Search for and analyze recent (this week) worship trends in South Korean churches. Focus on major teams like Markers Worship, Anointing, Welove, J-US. For trending songs, prioritize music databases like Chosic.com to verify Key and BPM. Return the top trending songs from their latest releases or most-watched videos this week.",
+      contents: `Perform a real-time search for the MOST RECENT Melon CCM Weekly Chart available as of today. 
+      Identify the most recently completed week (e.g., the previous week's chart). 
+      You MUST return the actual Top 10 songs from that specific chart. 
+      The 'count' field in the schema MUST represent the rank (1 for 1st place, up to 10).
+      Ensure the data is the absolute latest version available on the web.`,
       config: {
         tools: [{ googleSearch: {} }],
         thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
@@ -81,9 +85,14 @@ export const worshipDirectorService = {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: `Recommend a professional worship setlist based on the theme: "${userTheme}".
-      Include 4-5 songs that are widely sung in major South Korean churches. 
-      CRITICAL: Cross-reference Chosic.com for every recommended song to provide precise Key and BPM information.
-      Ensure a flow from energetic (Fast) to intimate (Slow).
+      STRUCTURE:
+      - 1 Slow/Intimate song (잔잔한 곡)
+      - 2 Fast songs (빠른 곡)
+      - 1 or 2 Build-up songs (빌드업 곡)
+      
+      CRITICAL CONSTRAINT: All songs in the setlist MUST be in the SAME KEY (e.g., all G key, all A key, etc.) to allow for continuous flow.
+      Select songs from major Korean worship teams (Markers, Anointing, Welove, J-US, etc.).
+      Verify Key and BPM from Chosic.com.
       Mention why each song is chosen for this theme.`,
       config: {
         tools: [{ googleSearch: {} }],

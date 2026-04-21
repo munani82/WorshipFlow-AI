@@ -123,13 +123,13 @@ export default function App() {
             >
               <div className="flex items-center justify-between border-b border-worship-border pb-4">
                 <div className="flex items-center gap-2">
-                  <h2 className="font-serif text-xl text-worship-accent">Weekly Trending</h2>
-                  <span className="text-[10px] bg-worship-accent/10 text-worship-accent px-2 py-0.5 rounded-full border border-worship-accent/20">AI Insights</span>
+                  <h2 className="font-serif text-xl text-worship-accent">Melon CCM Top Trends</h2>
+                  <span className="text-[10px] bg-worship-accent/10 text-worship-accent px-2 py-0.5 rounded-full border border-worship-accent/20">실시간 연동</span>
                 </div>
                 <TrendingUp className="w-4 h-4 text-worship-secondary" />
               </div>
               <p className="text-[10px] text-worship-secondary leading-relaxed font-serif italic mb-4">
-                * 주요 찬양팀의 공식 채널 및 커뮤니티 활동을 AI가 실시간 검색하여 분석한 트렌드입니다. 횟수는 영향력 지표를 의미합니다.
+                * 멜론 CCM 최신/인기 차트를 실시간으로 분석한 데이터입니다. 예배 선곡 트렌드를 한눈에 확인하세요.
               </p>
               
               <div className="space-y-1 divide-y divide-worship-border">
@@ -145,7 +145,7 @@ export default function App() {
                         <span className="block text-[11px] text-worship-secondary uppercase tracking-wider">{song.artist}</span>
                       </div>
                       <span className="text-[10px] font-mono bg-worship-accent/10 text-worship-accent px-2 py-0.5 rounded-full border border-worship-accent/20">
-                        {song.count}회
+                        {song.count}위
                       </span>
                     </div>
                   ))
@@ -170,68 +170,6 @@ export default function App() {
           {/* Analysis & Setlist Content */}
           <div className="lg:col-span-8 space-y-12">
             
-            {/* Analysis Tool */}
-            <section className="bg-worship-card border border-worship-border rounded-xl p-8 space-y-8 overflow-hidden">
-              <h3 className="font-serif text-xl tracking-tight text-white/50 mb-2">How it works</h3>
-              <p className="text-xs text-worship-secondary leading-relaxed mb-6 font-serif italic">
-                AI가 구글 검색을 통해 해당 영상의 곡 리스트와 정보를 실시간으로 찾아냅니다. 
-                유명 찬양팀(마커스, 어노인팅 등)의 영상일수록 정확도가 높으며, 
-                분석된 결과는 예배 기획의 기초 자료로 활용하시기 바랍니다.
-              </p>
-              
-              <div className="flex items-center justify-between border-b border-worship-border pb-4">
-                <h2 className="font-serif text-xl text-worship-accent">Liturgy Extractor</h2>
-                <Play className="w-4 h-4 text-worship-secondary" />
-              </div>
-
-              <form onSubmit={handleAnalyzeVideo} className="flex gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
-                  <input 
-                    type="text" 
-                    value={searchUrl}
-                    onChange={(e) => setSearchUrl(e.target.value)}
-                    placeholder="Enter YouTube URL for song extraction..."
-                    className="w-full bg-worship-bg border border-worship-border rounded-lg py-3 pl-12 pr-6 text-sm focus:outline-none focus:border-worship-accent transition-colors text-worship-ink placeholder:text-worship-secondary/30"
-                  />
-                </div>
-                <button 
-                  type="submit"
-                  disabled={analyzingVideo || !searchUrl}
-                  className="bg-worship-accent text-worship-bg font-bold text-xs uppercase tracking-widest px-8 rounded-lg hover:brightness-110 transition-all disabled:opacity-30 flex items-center gap-2"
-                >
-                  {analyzingVideo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 fill-current" />}
-                  Run
-                </button>
-              </form>
-
-              <AnimatePresence>
-                {videoResult && (
-                  <motion.div 
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="space-y-6 pt-4"
-                  >
-                    <p className="text-sm text-worship-secondary italic border-l-2 border-worship-accent pl-4">{videoResult.summary}</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {videoResult.song_list.map((song, i) => (
-                        <div key={i} className="flex flex-col p-4 bg-worship-bg rounded-lg border border-worship-border group hover:border-worship-accent transition-colors">
-                          <div className="flex justify-between items-start mb-2">
-                            <span className="font-serif text-sm group-hover:text-worship-accent transition-colors">{song.title}</span>
-                            <span className="badge-dark">{song.key}</span>
-                          </div>
-                          <div className="flex justify-between items-center text-[10px] text-worship-secondary uppercase tracking-widest font-mono">
-                            <span>{song.artist}</span>
-                            <span className={song.tempo.toLowerCase().includes('fast') ? 'text-[#8fbc8f]' : 'text-[#bc8f8f]'}>{song.tempo}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </section>
-
             {/* Setlist Summary */}
             <section className="bg-worship-card border border-worship-border rounded-xl flex flex-col min-h-[500px]">
               <div className="flex items-center justify-between p-8 border-b border-worship-border bg-worship-ink/[0.02]">
