@@ -79,11 +79,17 @@ export const worshipDirectorService = {
       });
 
       const text = response.text;
-      return JSON.parse(text);
-    } catch (error) {
+      try {
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        const jsonString = jsonMatch ? jsonMatch[0] : text;
+        return JSON.parse(jsonString);
+      } catch (e) {
+        console.error("JSON Parse Error in getWeeklyTrends. Raw response:", text);
+        throw new Error("데이터를 해석하는 중 오류가 발생했습니다.");
+      }
+    } catch (error: any) {
       console.error("Melon Chart Error:", error);
-      // Return a minimal fallback to avoid complete breakage
-      return { date: "2026-04-20", top_trending_songs: [] };
+      throw error;
     }
   },
 
@@ -128,8 +134,15 @@ export const worshipDirectorService = {
       });
 
       const text = response.text;
-      return JSON.parse(text);
-    } catch (error) {
+      try {
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        const jsonString = jsonMatch ? jsonMatch[0] : text;
+        return JSON.parse(jsonString);
+      } catch (e) {
+        console.error("JSON Parse Error in getRecommendation. Raw response:", text);
+        throw new Error("셋리스트 추천 데이터를 해석하는 중 오류가 발생했습니다.");
+      }
+    } catch (error: any) {
       console.error("Recommendation Error:", error);
       throw error;
     }

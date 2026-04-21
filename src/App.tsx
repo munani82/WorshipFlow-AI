@@ -136,6 +136,19 @@ export default function App() {
               </p>
               
               <div className="space-y-1 divide-y divide-worship-border">
+                {error && (
+                  <div className="py-8 px-4 text-center">
+                    <p className="text-[11px] text-red-400 font-serif leading-relaxed">
+                      {error}
+                    </p>
+                    <button 
+                      onClick={fetchTrends}
+                      className="mt-4 text-[10px] text-worship-accent underline hover:no-underline"
+                    >
+                      다시 시도
+                    </button>
+                  </div>
+                )}
                 {loadingTrends ? (
                   <div className="py-12 flex flex-col items-center justify-center text-worship-secondary gap-4">
                     <Loader2 className="w-6 h-6 animate-spin opacity-20" />
