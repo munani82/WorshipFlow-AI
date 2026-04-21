@@ -1,7 +1,8 @@
 import { GoogleGenAI, Type, ThinkingLevel } from "@google/genai";
 import { WeeklyAnalysis, Recommendation, VideoAnalysisResult } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
+const apiKey = (process.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY) as string;
+const ai = new GoogleGenAI({ apiKey });
 
 export const worshipDirectorService = {
   async analyzeVideo(youtubeUrl: string): Promise<VideoAnalysisResult> {
@@ -47,11 +48,10 @@ export const worshipDirectorService = {
     try {
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Perform a real-time search for the MOST RECENT Melon CCM Weekly Chart available as of today. 
-        Identify the most recently completed week (e.g., the previous week's chart). 
-        You MUST return the actual Top 10 songs from that specific chart. 
-        The 'count' field in the schema MUST represent the rank (1 for 1st place, up to 10).
-        Ensure the data is the absolute latest version available on the web.`,
+        contents: `Search for the "Melon Weekly CCM Chart" for the most recent week in April 2026. 
+        Focus on identifying the Top 10 songs. 
+        The 'count' field MUST be the rank (1 for 1st place, up to 10). 
+        Format your response as a strict JSON according to the schema.`,
         config: {
           tools: [{ googleSearch: {} }],
           responseMimeType: "application/json",
