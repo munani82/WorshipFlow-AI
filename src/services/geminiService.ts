@@ -55,82 +55,57 @@ export const worshipDirectorService = {
   },
 
   async getWeeklyTrends(): Promise<WeeklyAnalysis> {
-    // 1. Try the local Scraper API first
-    // Note: Netlify returns a 404 HTML page for non-existent API routes, which fetch() considers 'ok' but json() will fail.
     try {
-      const response = await fetch("/api/charts/weekly");
-      if (response.ok) {
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          return await response.json();
+      // 1. Fetch raw HTML from Bugs Music via a CORS proxy (to avoid browser security blocks)
+      const targetUrl = encodeURIComponent("https://music.bugs.co.kr/genre/chart/etc/nccm/total/week");
+      const proxyUrl = `https://api.allorigins.win/get?url=${targetUrl}`;
+      
+      const res = await fetch(proxyUrl);
+      if (!res.ok) throw new Error("네트워크 상태가 불안정합니다.");
+      
+      const data = await res.json();
+      const html = data.contents;
+      
+      // 2. Parse HTML using the browser's native DOMParser
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+      
+      const songs: any[] = [];
+      const rows = doc.querySelectorAll("table.list.trackList tbody tr");
+      
+      rows.forEach((row, index) => {
+        if (index >= 10) return; // Top 10 only
+        
+        const titleElement = row.querySelector("p.title a");
+        const artistElement = row.querySelector("p.artist a");
+        
+        if (titleElement && artistElement) {
+          const title = titleElement.textContent?.trim() || "";
+          const artist = artistElement.textContent?.trim() || "";
+          
+          let delta: "up" | "down" | "stable" = "stable";
+          const arrow = row.querySelector(".ranking .arrow");
+          if (arrow?.classList.contains("up")) delta = "up";
+          else if (arrow?.classList.contains("down")) delta = "down";
+
+          songs.push({
+            title,
+            artist,
+            count: index + 1,
+            delta
+          });
         }
-      }
-    } catch (e) {
-      console.log("Local API not accessible, switching to Search-based retrieval.");
-    }
-
-    // 2. Fallback: Search-based Scraper (Reliable on Netlify)
-    const key = getApiKey();
-    if (!key) {
-      throw new Error("API 키가 설정되지 않았습니다. Netlify 설정(Environment Variables)에서 VITE_GEMINI_API_KEY를 추가해주세요.");
-    }
-
-    try {
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Search for the MOST RECENT "Bugs Weekly CCM Chart" (https://music.bugs.co.kr/genre/chart/etc/nccm/total/week).
-        
-        CRITICAL RANKING BENCHMARK (As of April 21, 2026):
-        1. 은혜 - 손경민
-        2. 어둔 날 다 지나고 - WELOVE
-        3. 우리가 주를 더욱 사랑하고 - WELOVE
-        4. 혼자 걷지 않을 거예요 - 예람워십
-        5. 사랑한다 말하시네 - GIFTED
-        6. 주를 찾는 모든 자들이 - 팀룩워십
-        7. 주를 바라보며 - GIFTED
-        8. 광야를 지나며 - 히즈윌
-        9. 아름다운 나라 - WELOVE
-        10. 꽃들도 - 마커스워십
-
-        TASK: 
-        1. Verify if there is a newer chart than the one above.
-        2. If yes, extract the latest Top 10 EXACTLY as shown on the Bugs site.
-        3. If no newer chart exists, use the benchmark above but ensure the order is 100% correct.
-        
-        Return ONLY a strict JSON object.`,
-        config: {
-          tools: [{ googleSearch: {} }],
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              date: { type: Type.STRING },
-              top_trending_songs: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    title: { type: Type.STRING },
-                    artist: { type: Type.STRING },
-                    count: { type: Type.NUMBER },
-                    delta: { type: Type.STRING, enum: ["up", "down", "stable"] },
-                  },
-                  required: ["title", "artist", "count"],
-                },
-              },
-            },
-            required: ["date", "top_trending_songs"],
-          },
-        },
       });
 
-      const text = response.text;
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      const jsonString = jsonMatch ? jsonMatch[0] : text;
-      return JSON.parse(jsonString);
+      if (songs.length === 0) throw new Error("벅스 사이트 구조가 예상을 벗어났습니다.");
+
+      return {
+        date: new Date().toLocaleDateString('ko-KR'),
+        top_trending_songs: songs
+      };
     } catch (error: any) {
-      console.error("Cloud Scrapper Error:", error);
-      throw new Error(`차트 데이터를 불러올 수 없습니다. (환경: Netlify)`);
+      console.error("Direct Scraping Error:", error);
+      throw new Error("벅스 뮤직 웹사이트에서 직접 데이터를 가져오지 못했습니다. 사이트 접근을 확인해 주세요.");
     }
   },
 
