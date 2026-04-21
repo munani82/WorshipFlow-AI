@@ -56,74 +56,35 @@ export const worshipDirectorService = {
 
   async getWeeklyTrends(): Promise<WeeklyAnalysis> {
     try {
-      // 1. Fetch raw HTML from Bugs Music via a CORS proxy (to avoid browser security blocks)
-      const targetUrl = encodeURIComponent("https://music.bugs.co.kr/genre/chart/etc/nccm/total/week");
-      const proxyUrl = `https://api.allorigins.win/get?url=${targetUrl}`;
-      
-      const res = await fetch(proxyUrl);
-      if (!res.ok) throw new Error("네트워크 상태가 불안정합니다.");
-      
-      const data = await res.json();
-      const html = data.contents;
-      
-      // 2. Parse HTML using the browser's native DOMParser
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, "text/html");
-      
-      const songs: any[] = [];
-      const rows = doc.querySelectorAll("table.list.trackList tbody tr");
-      
-      rows.forEach((row, index) => {
-        if (index >= 10) return; // Top 10 only
-        
-        const titleElement = row.querySelector("p.title a");
-        const artistElement = row.querySelector("p.artist a");
-        
-        if (titleElement && artistElement) {
-          const title = titleElement.textContent?.trim() || "";
-          const artist = artistElement.textContent?.trim() || "";
-          
-          let delta: "up" | "down" | "stable" = "stable";
-          const arrow = row.querySelector(".ranking .arrow");
-          if (arrow?.classList.contains("up")) delta = "up";
-          else if (arrow?.classList.contains("down")) delta = "down";
-
-          songs.push({
-            title,
-            artist,
-            count: index + 1,
-            delta
-          });
-        }
-      });
-
-      if (songs.length === 0) throw new Error("벅스 사이트 구조가 예상을 벗어났습니다.");
-
-      return {
-        date: new Date().toLocaleDateString('ko-KR'),
-        top_trending_songs: songs
-      };
+      // Call our dedicated server-side Scraper API
+      const response = await fetch("/api/charts/weekly");
+      if (!response.ok) throw new Error("서버로부터 데이터를 가져오지 못했습니다.");
+      return await response.json();
     } catch (error: any) {
-      console.error("Direct Scraping Error:", error);
-      throw new Error("벅스 뮤직 웹사이트에서 직접 데이터를 가져오지 못했습니다. 사이트 접근을 확인해 주세요.");
+      console.error("Chart Fetch Error:", error);
+      throw new Error("벅스 뮤직에서 실시간 순위를 가져오는 과정에 문제가 발생했습니다. (서버 연결 실패)");
     }
   },
 
   async getRecommendation(userTheme: string): Promise<Recommendation> {
+    const key = getApiKey();
+    if (!key) throw new Error("API 키가 설정되지 않았습니다.");
+
     try {
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Recommend a professional worship setlist based on the theme: "${userTheme}".
-        STRUCTURE:
-        1. [Slow/Intimate] - 1 song
-        2. [Fast] - 2 songs (MUST be in the SAME KEY as each other for seamless transition)
-        3. [Build-up] - 2 songs (MUST be in the SAME KEY as each other for seamless transition)
+        contents: `Recommend a professional 5-song worship setlist for theme: "${userTheme}".
         
-        Total 5 songs. 
-        Select popular songs from major Korean worship teams (Markers, Anointing, Welove, J-US, etc.).
-        CRITICAL: For every song, you MUST search Tunebat.com to get the EXACT Key and BPM. do NOT guess.
-        Mention why each song is chosen for this theme.`,
+        CRITICAL ACCURACY REQUIREMENT:
+        - You MUST search Tunebat.com (https://tunebat.com) for EVERY recommended song.
+        - You MUST extract the EXACT Key and BPM from Tunebat. do NOT use your own memory or guess.
+        - The Key must be in standard notation (e.g., G, E, Ab, Bm).
+        
+        SONG SELECTION:
+        - Major Korean teams (Markers, Anointing, Welove, J-US, etc.).
+        - Seamless transitions: Fast songs in same key, Build-up in same key.`,
         config: {
+          tools: [{ googleSearch: {} }],
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.OBJECT,
@@ -150,18 +111,10 @@ export const worshipDirectorService = {
         },
       });
 
-      const text = response.text;
-      try {
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        const jsonString = jsonMatch ? jsonMatch[0] : text;
-        return JSON.parse(jsonString);
-      } catch (e) {
-        console.error("JSON Parse Error in getRecommendation. Raw response:", text);
-        throw new Error("셋리스트 추천 데이터를 해석하는 중 오류가 발생했습니다.");
-      }
+      return JSON.parse(response.text);
     } catch (error: any) {
       console.error("Recommendation Error:", error);
-      throw error;
+      throw new Error("셋리스트 추천 생성에 실패했습니다. (Tunebat 데이터 확인 중 오류)");
     }
   },
 };
