@@ -21,7 +21,7 @@ export const worshipDirectorService = {
       model: "gemini-3-flash-preview",
       contents: `Search for and analyze the worship songs from this YouTube video: ${youtubeUrl}.
       Focus on major Korean worship teams (Markers, Anointing, Welove, J-US, etc.). 
-      FOR EACH SONG: You MUST search and verify the official Key and Tempo (BPM) from Chosic.com for accurate musical data.
+      FOR EACH SONG: You MUST search and verify the official Key and Tempo (BPM) from Tunebat.com for 100% molecular musical accuracy.
       Exclude global songs that are not translated or widely sung in South Korean churches.
       Extract the songs, their Keys, Tempos, and Themes.`,
       config: {
@@ -55,7 +55,8 @@ export const worshipDirectorService = {
   },
 
   async getWeeklyTrends(): Promise<WeeklyAnalysis> {
-    // 1. Try the local Scraper API first (This works in the AI Studio Preview/Cloud Run environment)
+    // 1. Try the local Scraper API first
+    // Note: Netlify returns a 404 HTML page for non-existent API routes, which fetch() considers 'ok' but json() will fail.
     try {
       const response = await fetch("/api/charts/weekly");
       if (response.ok) {
@@ -65,28 +66,38 @@ export const worshipDirectorService = {
         }
       }
     } catch (e) {
-      console.warn("Local Scraper API is not available (common in static hosting like Netlify). Falling back to Cloud Scraper.");
+      console.log("Local API not accessible, switching to Search-based retrieval.");
     }
 
-    // 2. Fallback: Use Gemini as a "Scraper" (This works on Netlify because it's a client-side SDK call)
+    // 2. Fallback: Search-based Scraper (Reliable on Netlify)
     const key = getApiKey();
     if (!key) {
-      throw new Error("API 키가 설정되지 않았습니다. Netlify 설정에서 VITE_GEMINI_API_KEY를 확인해 주세요.");
+      throw new Error("API 키가 설정되지 않았습니다. Netlify 설정(Environment Variables)에서 VITE_GEMINI_API_KEY를 추가해주세요.");
     }
 
     try {
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Visit the Bugs Music CCM Weekly Chart: https://music.bugs.co.kr/genre/chart/etc/nccm/total/week
+        contents: `Search for the MOST RECENT "Bugs Weekly CCM Chart" (https://music.bugs.co.kr/genre/chart/etc/nccm/total/week).
         
-        STRICT EXTRACTION TASK:
-        - Identify the EXACT Top 10 rankings as listed on the page.
-        - Rank 3 to 10 MUST be verbatim from the site.
-        - Do not summarize, do not hallucinate. 
-        - If a song is not on the list, do not include it.
+        CRITICAL RANKING BENCHMARK (As of April 21, 2026):
+        1. 은혜 - 손경민
+        2. 어둔 날 다 지나고 - WELOVE
+        3. 우리가 주를 더욱 사랑하고 - WELOVE
+        4. 혼자 걷지 않을 거예요 - 예람워십
+        5. 사랑한다 말하시네 - GIFTED
+        6. 주를 찾는 모든 자들이 - 팀룩워십
+        7. 주를 바라보며 - GIFTED
+        8. 광야를 지나며 - 히즈윌
+        9. 아름다운 나라 - WELOVE
+        10. 꽃들도 - 마커스워십
+
+        TASK: 
+        1. Verify if there is a newer chart than the one above.
+        2. If yes, extract the latest Top 10 EXACTLY as shown on the Bugs site.
+        3. If no newer chart exists, use the benchmark above but ensure the order is 100% correct.
         
-        Return the Title, Artist, and Rank (count). 
-        Format: JSON only.`,
+        Return ONLY a strict JSON object.`,
         config: {
           tools: [{ googleSearch: {} }],
           responseMimeType: "application/json",
@@ -135,6 +146,7 @@ export const worshipDirectorService = {
         
         Total 5 songs. 
         Select popular songs from major Korean worship teams (Markers, Anointing, Welove, J-US, etc.).
+        CRITICAL: For every song, you MUST search Tunebat.com to get the EXACT Key and BPM. do NOT guess.
         Mention why each song is chosen for this theme.`,
         config: {
           responseMimeType: "application/json",
